@@ -32,7 +32,7 @@ namespace Eventstore.Utils
                                .InitializeStorageEngine()
                                .UsingServiceStackJsonSerialization()
                                .Build();
-            IRepository repository = new EventStoreRepository(EventStore, new AggregateFactory(), new ConflictDetector());
+            Repository = new EventStoreRepository(EventStore, new AggregateFactory(), new ConflictDetector());
 
         }
 
