@@ -66,10 +66,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AggregateFactory.cs" />
-    <Compile Include="AzureConfigurationConnectionFactory.cs" />
     <Compile Include="EventStoreBuilder.cs" />
     <Compile Include="EventStoreConventionsHelper.cs" />
     <Compile Include="EventStoreExtensions.cs" />
+    <Compile Include="PassthroughConnectionFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

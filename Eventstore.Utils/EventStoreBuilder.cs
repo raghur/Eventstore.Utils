@@ -26,7 +26,7 @@ namespace Eventstore.Utils
 
             EventStore = Wireup.Init()
                                .LogToOutputWindow()
-                               .UsingSqlPersistence(new AzureConfigurationConnectionFactory(prefix + "EventStore", eventStoreDBConn))
+                               .UsingSqlPersistence(new PassthroughConnectionFactory(eventStoreDBConn))
                                .WithDialect(new MsSqlDialect())
                                .EnlistInAmbientTransaction()
                                .InitializeStorageEngine()
@@ -35,6 +35,8 @@ namespace Eventstore.Utils
             Repository = new EventStoreRepository(EventStore, new AggregateFactory(), new ConflictDetector());
 
         }
+
+
 
 
         
