@@ -21,9 +21,11 @@ namespace Eventstore.Utils
 
         }
 
-        public static IEnumerable<Commit> Commits<T>(this IStoreEvents es, DateTime? @from = null)
+        public static IEnumerable<Commit> Commits<T>(this IStoreEvents es, Func<T, bool> cond  = null, DateTime? @from = null)
         {
-            return es.Commits(c => c.Events.Any(e => e.Body.GetType() == typeof(T)), @from);
+            cond = cond ?? (t => true);
+            return es.Commits(c => c.Events.Any(e => e.Body.GetType() == typeof (T) && cond((T) e.Body)), @from);
+
         }
 
         public static IEnumerable<Commit> Commits(this IStoreEvents es, params Type[] eventTypes)
