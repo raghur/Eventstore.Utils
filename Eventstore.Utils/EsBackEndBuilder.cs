@@ -21,11 +21,21 @@ namespace Eventstore.Utils
         private string eventStoreDBConn;
         private Type[] typesToStream;
         private string storageAccountConnectionString;
-
+        public EsBackEndBuilder()
+        {
+            
+        }
         public EsBackEndBuilder(string prefix, string eventStoreDbConn)
         {
             this.prefix = prefix;
             eventStoreDBConn = eventStoreDbConn;
+        }
+
+        public EsBackEndBuilder WithEventStore(string prefix, string eventStoreDbConn)
+        {
+            this.prefix = prefix;
+            eventStoreDBConn = eventStoreDbConn;
+            return this;
         }
 
         public EsBackEndBuilder WithCommandSender(string storageConn, params Type[] types)
@@ -46,19 +56,23 @@ namespace Eventstore.Utils
                 var Streamer = Contracts.CreateStreamer(typesToStream);
                 var config = AzureStorage.CreateConfig(storageAccountConnectionString);
                 backEnd.CommandSender = new MessageSender(
-                Streamer,
-                config.CreateQueueWriter(prefix.DefaultRouterQueue()));
+                                                Streamer,
+                                                config.CreateQueueWriter(prefix.DefaultRouterQueue()));
             }
             
-            backEnd.EventStore = Wireup.Init()
-                               .LogToOutputWindow()
-                               .UsingSqlPersistence(new PassthroughConnectionFactory(eventStoreDBConn))
-                               .WithDialect(new MsSqlDialect())
-                               .EnlistInAmbientTransaction()
-                               .InitializeStorageEngine()
-                               .UsingServiceStackJsonSerialization()
-                               .Build();
-            backEnd.Repository = new EventStoreRepository(backEnd.EventStore, new AggregateFactory(), new ConflictDetector());
+            if (!string.IsNullOrEmpty(this.eventStoreDBConn))
+            {
+                backEnd.EventStore = Wireup.Init()
+                                   .LogToOutputWindow()
+                                   .UsingSqlPersistence(new PassthroughConnectionFactory(eventStoreDBConn))
+                                   .WithDialect(new MsSqlDialect())
+                                   .EnlistInAmbientTransaction()
+                                   .InitializeStorageEngine()
+                                   .UsingServiceStackJsonSerialization()
+                                   .Build();
+                backEnd.Repository = new EventStoreRepository(backEnd.EventStore, new AggregateFactory(), new ConflictDetector());    
+            }
+            
             return backEnd;
         }
 
