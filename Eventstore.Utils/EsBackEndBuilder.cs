@@ -6,6 +6,7 @@ using CommonDomain.Persistence.EventStore;
 using EventStore;
 using EventStore.Persistence.SqlPersistence.SqlDialects;
 using Lokad.Cqrs;
+using Lokad.Cqrs.AtomicStorage;
 
 namespace Eventstore.Utils
 {
@@ -14,6 +15,7 @@ namespace Eventstore.Utils
         public MessageSender CommandSender { get; set; }
         public IRepository Repository { get; set; }
         public IStoreEvents EventStore { get; set; }
+        public IDocumentStore DocumentStore { get; set; }
     }
     public class EsBackEndBuilder
     {
@@ -38,20 +40,32 @@ namespace Eventstore.Utils
             return this;
         }
 
+        
         public EsBackEndBuilder WithCommandSender(string storageConn, params Type[] types)
         {
+            this.ConfigureCommandSender = true;
             this.typesToStream = types;
             this.storageAccountConnectionString = storageConn;
             return this;
         }
         
-        
+        public EsBackEndBuilder WithDocumentStore(string storageConn)
+        {
+            this.ConfigureDocStore = true;
+            this.storageAccountConnectionString = storageConn;
+            return this;
+        }
+
+        protected bool ConfigureDocStore;
+        private bool ConfigureCommandSender;
+
+
         public EsBackEnd Build()
         {
             var backEnd = new EsBackEnd();
             
 
-            if (!string.IsNullOrEmpty(this.storageAccountConnectionString))
+            if (this.ConfigureCommandSender)
             {
                 var Streamer = Contracts.CreateStreamer(typesToStream);
                 var config = AzureStorage.CreateConfig(storageAccountConnectionString);
@@ -60,6 +74,12 @@ namespace Eventstore.Utils
                                                 config.CreateQueueWriter(prefix.DefaultRouterQueue()));
             }
             
+            if (this.ConfigureDocStore)
+            {
+                var config = AzureStorage.CreateConfig(storageAccountConnectionString);
+                var viewStrategy = new ViewStrategy();
+                backEnd.DocumentStore = config.CreateDocumentStore(viewStrategy);
+            }
             if (!string.IsNullOrEmpty(this.eventStoreDBConn))
             {
                 backEnd.EventStore = Wireup.Init()
