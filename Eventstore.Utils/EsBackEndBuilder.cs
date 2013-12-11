@@ -23,9 +23,9 @@ namespace Eventstore.Utils
         private string eventStoreDBConn;
         private Type[] typesToStream;
         private string storageAccountConnectionString;
-        public EsBackEndBuilder()
+        public EsBackEndBuilder(string prefix)
         {
-            
+            this.prefix = prefix;
         }
         public EsBackEndBuilder(string prefix, string eventStoreDbConn)
         {
@@ -33,7 +33,7 @@ namespace Eventstore.Utils
             eventStoreDBConn = eventStoreDbConn;
         }
 
-        public EsBackEndBuilder WithEventStore(string prefix, string eventStoreDbConn)
+        public EsBackEndBuilder WithEventStore(string eventStoreDbConn)
         {
             this.prefix = prefix;
             eventStoreDBConn = eventStoreDbConn;
