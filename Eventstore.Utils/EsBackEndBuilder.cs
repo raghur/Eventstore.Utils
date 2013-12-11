@@ -19,31 +19,36 @@ namespace Eventstore.Utils
     }
     public class EsBackEndBuilder
     {
-        private string prefix; 
-        private string eventStoreDBConn;
+        private readonly string prefix; 
+        private string eventStoreDbConn;
         private Type[] typesToStream;
         private string storageAccountConnectionString;
+        protected bool ConfigureDocStore;
+        private bool configureCommandSender;
+
+
         public EsBackEndBuilder(string prefix)
         {
             this.prefix = prefix;
         }
+
+        [Obsolete("Use ctor with prefix and the WithEventStore method")]
         public EsBackEndBuilder(string prefix, string eventStoreDbConn)
         {
             this.prefix = prefix;
-            eventStoreDBConn = eventStoreDbConn;
+            this.eventStoreDbConn = eventStoreDbConn;
         }
 
         public EsBackEndBuilder WithEventStore(string eventStoreDbConn)
         {
-            this.prefix = prefix;
-            eventStoreDBConn = eventStoreDbConn;
+            this.eventStoreDbConn = eventStoreDbConn;
             return this;
         }
 
         
         public EsBackEndBuilder WithCommandSender(string storageConn, params Type[] types)
         {
-            this.ConfigureCommandSender = true;
+            this.configureCommandSender = true;
             this.typesToStream = types;
             this.storageAccountConnectionString = storageConn;
             return this;
@@ -56,8 +61,7 @@ namespace Eventstore.Utils
             return this;
         }
 
-        protected bool ConfigureDocStore;
-        private bool ConfigureCommandSender;
+       
 
 
         public EsBackEnd Build()
@@ -65,12 +69,12 @@ namespace Eventstore.Utils
             var backEnd = new EsBackEnd();
             
 
-            if (this.ConfigureCommandSender)
+            if (this.configureCommandSender)
             {
-                var Streamer = Contracts.CreateStreamer(typesToStream);
+                var streamer = Contracts.CreateStreamer(typesToStream);
                 var config = AzureStorage.CreateConfig(storageAccountConnectionString);
                 backEnd.CommandSender = new MessageSender(
-                                                Streamer,
+                                                streamer,
                                                 config.CreateQueueWriter(prefix.DefaultRouterQueue()));
             }
             
@@ -80,11 +84,11 @@ namespace Eventstore.Utils
                 var viewStrategy = new ViewStrategy();
                 backEnd.DocumentStore = config.CreateDocumentStore(viewStrategy);
             }
-            if (!string.IsNullOrEmpty(this.eventStoreDBConn))
+            if (!string.IsNullOrEmpty(this.eventStoreDbConn))
             {
                 backEnd.EventStore = Wireup.Init()
                                    .LogToOutputWindow()
-                                   .UsingSqlPersistence(new PassthroughConnectionFactory(eventStoreDBConn))
+                                   .UsingSqlPersistence(new PassthroughConnectionFactory(eventStoreDbConn))
                                    .WithDialect(new MsSqlDialect())
                                    .EnlistInAmbientTransaction()
                                    .InitializeStorageEngine()
