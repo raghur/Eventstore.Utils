@@ -40,3 +40,9 @@ var django = new EsBackEndBuilder("django")
 ```
 
 **There are other extensions that return `Commit` objects as well if you need to operate on commits.**
+
+####`Configuration` object: 
+
+That is internal - just has strings/keys/other secrets per environment. 
+For my coworkers at Aditi: 
+You’ll need to copy everything in the extensions file `django/assets/RR_Extensions.FW40.linq` into your MyExtensions file in Linqpad
