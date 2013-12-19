@@ -21,6 +21,13 @@ namespace Eventstore.Utils
 
         }
 
+        public static IEnumerable<EventMessage> EventMessages(this IStoreEvents es, DateTime? @from = null, params Type[] types)
+        {
+            return es.Events(c => c.Events.Select(e => e.Body.GetType()).Intersect(types).Any() ,
+                                                e => types.Any(t => t == e.Body.GetType()), @from);
+
+        }
+
         public static IEnumerable<Commit> Commits<T>(this IStoreEvents es, Func<T, bool> cond  = null, DateTime? @from = null)
         {
             cond = cond ?? (t => true);
