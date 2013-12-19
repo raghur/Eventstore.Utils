@@ -34,7 +34,9 @@ var django = new EsBackEndBuilder("django")
     django.EventStore.Events<TenantCreated>(t => t.IdP == "Google").Dump();
 	
     // filter by time as well
-    django.EventStore.Events<TenantCreated>(t => t.IdP == "Google", DateTime.UtcNow - TimeSpan.FromDays(-10)).Dump();
+    django.EventStore.Events<TenantCreated>(t => t.IdP == "Google",
+    											 DateTime.UtcNow - TimeSpan.FromDays(-10))
+    										.Dump();
 ```
 
 **There are other extensions that return `Commit` objects as well if you need to operate on commits.**
