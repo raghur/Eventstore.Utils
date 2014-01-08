@@ -19,7 +19,8 @@ namespace Eventstore.Utils
     }
     public class EsBackEndBuilder
     {
-        private readonly string prefix; 
+        private readonly string prefix;
+        private Conventions conventions;
         private string eventStoreDbConn;
         private Type[] typesToStream;
         private string storageAccountConnectionString;
@@ -30,6 +31,7 @@ namespace Eventstore.Utils
         public EsBackEndBuilder(string prefix)
         {
             this.prefix = prefix;
+            this.conventions = new Conventions(prefix);
         }
 
         [Obsolete("Use ctor with prefix and the WithEventStore method")]
@@ -75,13 +77,13 @@ namespace Eventstore.Utils
                 var config = AzureStorage.CreateConfig(storageAccountConnectionString);
                 backEnd.CommandSender = new MessageSender(
                                                 streamer,
-                                                config.CreateQueueWriter(prefix.DefaultRouterQueue()));
+                                                config.CreateQueueWriter(conventions.DefaultRouterQueue));
             }
             
             if (this.ConfigureDocStore)
             {
                 var config = AzureStorage.CreateConfig(storageAccountConnectionString);
-                var viewStrategy = new ViewStrategy();
+                var viewStrategy = new ViewStrategy(new Conventions(prefix));
                 backEnd.DocumentStore = config.CreateDocumentStore(viewStrategy);
             }
             if (!string.IsNullOrEmpty(this.eventStoreDbConn))

@@ -1,3 +1,4 @@
 Eventstore.Utils/bin
 Eventstore.Utils/obj
 *.suo
+packages/
