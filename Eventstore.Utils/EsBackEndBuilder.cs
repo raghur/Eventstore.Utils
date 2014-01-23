@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using CQRS.Engine;
 using CommonDomain.Core;
 using CommonDomain.Persistence;
@@ -10,6 +12,13 @@ using Lokad.Cqrs.AtomicStorage;
 
 namespace Eventstore.Utils
 {
+    public class Prefix
+    {
+        public const string Django = "django";
+        public const string Brewmaster = "bm";
+        public const string SchedulerLegacy = "ts";
+        public const string Scheduler = "sched";
+    }
     public class EsBackEnd
     {
         public MessageSender CommandSender { get; set; }
@@ -48,7 +57,18 @@ namespace Eventstore.Utils
             return this;
         }
 
-        
+        public EsBackEndBuilder WithSenders(string storageConn, Type type, params Type[] otherTypes)
+        {
+            this.configureCommandSender = true;
+            var types = new List<Type>(){type};
+            
+            this.typesToStream = new[]{type};
+            this.typesToStream = this.typesToStream.Concat(otherTypes).ToArray();
+            this.storageAccountConnectionString = storageConn;
+            return this;
+        }
+
+        [Obsolete("Use WithSenders since it now sets up CommandSender and EventPublisher")]
         public EsBackEndBuilder WithCommandSender(string storageConn, params Type[] types)
         {
             this.configureCommandSender = true;
