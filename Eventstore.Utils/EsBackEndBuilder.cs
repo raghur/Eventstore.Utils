@@ -13,6 +13,7 @@ namespace Eventstore.Utils
     public class EsBackEnd
     {
         public MessageSender CommandSender { get; set; }
+        public MessageSender EventPublisher { get; set; }
         public IRepository Repository { get; set; }
         public IStoreEvents EventStore { get; set; }
         public IDocumentStore DocumentStore { get; set; }
@@ -78,6 +79,7 @@ namespace Eventstore.Utils
                 backEnd.CommandSender = new MessageSender(
                                                 streamer,
                                                 config.CreateQueueWriter(conventions.DefaultRouterQueue));
+                backEnd.EventPublisher = new MessageSender(streamer, config.CreateQueueWriter(conventions.EventProcessingQueue));
             }
             
             if (this.ConfigureDocStore)
