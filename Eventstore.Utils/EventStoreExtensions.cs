@@ -28,6 +28,11 @@ namespace Eventstore.Utils
 
         }
 
+        public static IEnumerable<EventMessage> EventMessages(this IStoreEvents es, DateTime? @from = null)
+        {
+            return es.Events(null, null, @from);
+        }
+
         public static IEnumerable<Commit> Commits<T>(this IStoreEvents es, Func<T, bool> cond  = null, DateTime? @from = null)
         {
             cond = cond ?? (t => true);
