@@ -2,11 +2,38 @@
 using System.Collections.Generic;
 using System.Linq;
 using EventStore;
+using Lokad.Cqrs;
 
 namespace Eventstore.Utils
 {
     public static class EventStoreExtensions
     {
+        public static void ReplayEvents(this IEnumerable<object> handlers, IEnumerable<EventMessage> events)
+        {
+            var eventHandlerChain = new RedirectToDynamicEvent();
+            handlers.ToList().ForEach(eventHandlerChain.WireToWhen);
+            events.ToList().ForEach(ev =>
+                {
+                    if (ev != null)
+                    {
+                        eventHandlerChain.InvokeEvent(ev.Body);
+                    }
+                });
+        }
+
+        public static void ReplayEvents(this IEnumerable<object> handlers, IEnumerable<object> events)
+        {
+            var eventHandlerChain = new RedirectToDynamicEvent();
+            handlers.ToList().ForEach(eventHandlerChain.WireToWhen);
+            events.ToList().ForEach(ev =>
+            {
+                if (ev != null)
+                {
+                    eventHandlerChain.InvokeEvent(ev);
+                }
+            });
+        }
+
         public static IEnumerable<T> Events<T>(this IStoreEvents es, Func<T, bool> predicate = null,  DateTime? @from = null)
         {
             predicate = predicate ?? (t => true);
@@ -15,22 +42,43 @@ namespace Eventstore.Utils
                      .Where(predicate);
         }
 
+        public static IEnumerable<object> Events(this IStoreEvents es, DateTime? @from = null, params Type[] types)
+        {
+            return es.EventMessages(from, types)
+                     .Select(em => em.Body);
+        }
+
         public static IEnumerable<EventMessage> EventMessages<T>(this IStoreEvents es, DateTime? @from = null)
         {
-            return es.Events(c => c.Events.Any(e => e.Body.GetType() == typeof(T)), e => e.Body.GetType() == typeof(T), @from);
+            return es.EventMessages(c => c.Events.Any(e => e.Body.GetType() == typeof(T)), e => e.Body.GetType() == typeof(T), @from);
 
         }
 
         public static IEnumerable<EventMessage> EventMessages(this IStoreEvents es, DateTime? @from = null, params Type[] types)
         {
-            return es.Events(c => c.Events.Select(e => e.Body.GetType()).Intersect(types).Any() ,
+            return es.EventMessages(c => c.Events.Select(e => e.Body.GetType()).Intersect(types).Any() ,
                                                 e => types.Any(t => t == e.Body.GetType()), @from);
 
         }
 
         public static IEnumerable<EventMessage> EventMessages(this IStoreEvents es, DateTime? @from = null)
         {
-            return es.Events(null, null, @from);
+            return es.EventMessages(null, null, @from);
+        }
+
+        public static IEnumerable<EventMessage> EventMessages(this IStoreEvents es,
+                                                       Func<Commit, bool> commitFilter = null,
+                                                       Func<EventMessage, bool> eventFilter = null,
+                                                       DateTime? @from = null)
+        {
+            commitFilter = commitFilter ?? (c => true);
+            eventFilter = eventFilter ?? (em => true);
+            return es.Advanced
+                     .GetFrom(@from ?? DateTime.MinValue)
+                     .Where(commitFilter)
+                     .OrderBy(c => c.CommitSequence)
+                     .SelectMany(c => c.Events.Where(eventFilter))
+                     .ToList();
         }
 
         public static IEnumerable<Commit> Commits<T>(this IStoreEvents es, Func<T, bool> cond  = null, DateTime? @from = null)
@@ -46,20 +94,7 @@ namespace Eventstore.Utils
         }
 
 
-        public static IEnumerable<EventMessage> Events(this IStoreEvents es,
-                                                       Func<Commit, bool> commitFilter = null,
-                                                       Func<EventMessage, bool> eventFilter = null,
-                                                       DateTime? @from = null)
-        {
-            commitFilter = commitFilter ?? (c => true);
-            eventFilter = eventFilter ?? (em => true);
-            return es.Advanced
-                     .GetFrom(@from ?? DateTime.MinValue)
-                     .Where(commitFilter)
-                     .OrderBy(c => c.CommitSequence)
-                     .SelectMany(c => c.Events.Where(eventFilter));
-        }
-
+        
         public static IEnumerable<Commit> Commits(this IStoreEvents es,
                                                   Func<Commit, bool> commitFilter = null,
                                                   DateTime? @from = null)
@@ -68,7 +103,8 @@ namespace Eventstore.Utils
             return es.Advanced
                      .GetFrom(@from ?? DateTime.MinValue)
                      .Where(commitFilter)
-                     .OrderBy(c => c.CommitSequence);
+                     .OrderBy(c => c.CommitSequence)
+                     .ToList();
         }
 
 
