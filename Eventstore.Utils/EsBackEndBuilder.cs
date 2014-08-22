@@ -1,12 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Transactions;
 using CQRS.Engine;
 using CommonDomain.Core;
 using CommonDomain.Persistence;
 using CommonDomain.Persistence.EventStore;
 using EventStore;
+using EventStore.Persistence;
+using EventStore.Persistence.SqlPersistence;
 using EventStore.Persistence.SqlPersistence.SqlDialects;
+using EventStore.Serialization;
+using Eventstore.Utils.EventPatcher;
 using Lokad.Cqrs;
 using Lokad.Cqrs.AtomicStorage;
 
@@ -36,6 +41,7 @@ namespace Eventstore.Utils
         private string storageAccountConnectionString;
         protected bool ConfigureDocStore;
         private bool configureCommandSender;
+        private bool allowEventPatcher;
 
 
         public EsBackEndBuilder(string prefix)
@@ -51,9 +57,10 @@ namespace Eventstore.Utils
             this.eventStoreDbConn = eventStoreDbConn;
         }
 
-        public EsBackEndBuilder WithEventStore(string eventStoreDbConn)
+        public EsBackEndBuilder WithEventStore(string eventStoreDbConn, bool allowEventPatching = false)
         {
             this.eventStoreDbConn = eventStoreDbConn;
+            this.allowEventPatcher = allowEventPatching;
             return this;
         }
 
@@ -110,14 +117,28 @@ namespace Eventstore.Utils
             }
             if (!string.IsNullOrEmpty(this.eventStoreDbConn))
             {
-                backEnd.EventStore = Wireup.Init()
+                var passthroughConnectionFactory = new PassthroughConnectionFactory(eventStoreDbConn);
+                var container = new NanoContainer();
+                var wireupInstance = CustomWireup.Init(container)
                                    .LogToOutputWindow()
-                                   .UsingSqlPersistence(new PassthroughConnectionFactory(eventStoreDbConn))
+                                   .UsingSqlPersistence(passthroughConnectionFactory)
                                    .WithDialect(new MsSqlDialect())
                                    .EnlistInAmbientTransaction()
                                    .InitializeStorageEngine()
-                                   .UsingServiceStackJsonSerialization()
-                                   .Build();
+                                   .UsingServiceStackJsonSerialization();
+                if (allowEventPatcher)
+                {
+                    container.Register<IPersistStreams>(
+                        c =>
+                        new CustomSqlPersistenceFactory(
+                            passthroughConnectionFactory,
+                            c.Resolve<ISerialize>(),
+                            c.Resolve<ISqlDialect>(),
+                            c.Resolve<TransactionScopeOption>(),
+                            512).Build());
+                }
+
+                backEnd.EventStore = wireupInstance.Build();
                 backEnd.Repository = new EventStoreRepository(backEnd.EventStore, new AggregateFactory(), new ConflictDetector());    
             }
             

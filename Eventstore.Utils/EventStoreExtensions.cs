@@ -4,10 +4,15 @@ using System.Linq;
 using EventStore;
 using Lokad.Cqrs;
 
+
 namespace Eventstore.Utils
 {
     public static class EventStoreExtensions
     {
+        public static void RewriteEvent<T>(this IStoreEvents eventStore, Func<T, bool> updateFn)
+        {
+            
+        }
         public static void ReplayEvents(this IEnumerable<object> handlers, IEnumerable<EventMessage> events)
         {
             var eventHandlerChain = new RedirectToDynamicEvent();
@@ -48,9 +53,22 @@ namespace Eventstore.Utils
                      .Select(em => em.Body);
         }
 
+        public static IEnumerable<object> Events(this IStoreEvents es, Guid aggregateId, DateTime? @from = null, params Type[] types)
+        {
+            return es.EventMessages(aggregateId, @from, types)
+                     .Select(em => em.Body);
+        }
+
         public static IEnumerable<EventMessage> EventMessages<T>(this IStoreEvents es, DateTime? @from = null)
         {
             return es.EventMessages(c => c.Events.Any(e => e.Body.GetType() == typeof(T)), e => e.Body.GetType() == typeof(T), @from);
+
+        }
+
+        public static IEnumerable<EventMessage> EventMessages(this IStoreEvents es, Guid aggregateId, DateTime? @from = null, params Type[] types)
+        {
+            return es.EventMessages(c => c.StreamId == aggregateId,
+                                                e => types.Any(t => t == e.Body.GetType()), @from);
 
         }
 
@@ -59,6 +77,11 @@ namespace Eventstore.Utils
             return es.EventMessages(c => c.Events.Select(e => e.Body.GetType()).Intersect(types).Any() ,
                                                 e => types.Any(t => t == e.Body.GetType()), @from);
 
+        }
+
+        public static IEnumerable<EventMessage> EventMessages(this IStoreEvents es, Guid aggregateId, DateTime? @from = null)
+        {
+            return es.EventMessages(c => c.StreamId == aggregateId, null, @from);
         }
 
         public static IEnumerable<EventMessage> EventMessages(this IStoreEvents es, DateTime? @from = null)
@@ -81,6 +104,7 @@ namespace Eventstore.Utils
                      .ToList();
         }
 
+        
         public static IEnumerable<Commit> Commits<T>(this IStoreEvents es, Func<T, bool> cond  = null, DateTime? @from = null)
         {
             cond = cond ?? (t => true);

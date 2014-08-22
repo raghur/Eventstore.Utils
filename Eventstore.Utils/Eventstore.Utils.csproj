@@ -87,6 +87,7 @@
     <Reference Include="System.Spatial, Version=5.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Spatial.5.2.0\lib\net40\System.Spatial.dll</HintPath>
     </Reference>
+    <Reference Include="System.Transactions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -96,6 +97,9 @@
   <ItemGroup>
     <Compile Include="AggregateFactory.cs" />
     <Compile Include="EsBackEndBuilder.cs" />
+    <Compile Include="EventPatcher\CustomSqlPersistenceFactory.cs" />
+    <Compile Include="EventPatcher\CustomWireup.cs" />
+    <Compile Include="EventPatcher\SqlPersistenceEngine.cs" />
     <Compile Include="EventStoreExtensions.cs" />
     <Compile Include="MemSettingsProvider.cs" />
     <Compile Include="PassthroughConnectionFactory.cs" />
