@@ -28,14 +28,9 @@ namespace Eventstore.Utils.EventPatcher
 
         public override void Commit(Commit attempt)
         {
-            try
-            {
-                base.Commit(attempt);
-            }
-            catch (DuplicateCommitException dce)
-            {
-                PersistExistingCommit(attempt);
-            }
+          PersistExistingCommit(attempt);
+            
+            
         }
 
         private void PersistExistingCommit(Commit attempt)
