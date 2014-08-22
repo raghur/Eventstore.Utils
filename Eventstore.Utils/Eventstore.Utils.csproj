@@ -96,7 +96,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AggregateFactory.cs" />
+    <Compile Include="CommitExtensions.cs" />
     <Compile Include="EsBackEndBuilder.cs" />
+    <Compile Include="EventBodyExtensions.cs" />
+    <Compile Include="EventMessageExtensions.cs" />
     <Compile Include="EventPatcher\CustomSqlPersistenceFactory.cs" />
     <Compile Include="EventPatcher\CustomWireup.cs" />
     <Compile Include="EventPatcher\SqlPersistenceEngine.cs" />
