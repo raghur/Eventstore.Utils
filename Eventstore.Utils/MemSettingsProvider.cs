@@ -7,29 +7,6 @@ using Aditi.Common.Azure;
 
 namespace Eventstore.Utils
 {
-    public class ServiceConfigSettingsProvider: ISettingsProvider
-    {
-        private MemSettingsProvider theSettingsProvider;
-        public ServiceConfigSettingsProvider(string uri, string roleName)
-        {
-           
-            
-        }
-        public bool TryGetString(string key, out string result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string TryGetString(string key)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string GetStringOrThrow(string key)
-        {
-            throw new NotImplementedException();
-        }
-    }
     public class MemSettingsProvider : ISettingsProvider
     {
         private readonly IDictionary<string, string> data;
