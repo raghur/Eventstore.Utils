@@ -50,5 +50,12 @@ namespace Eventstore.Utils
                      .OrderBy(c => c.CommitSequence)
                      .ToList();
         }
+
+        public static void Rewrite(this IEnumerable<Commit> commits, IStoreEvents eventStore,
+                                   Action<EventMessage> dumper = null)
+        {
+            // CAREFUL - WILL ALWAYS OVERWRITE COMMITS.
+            eventStore.RewriteCommits(commits, (c,o) => true, dumper);
+        }
     }
 }
