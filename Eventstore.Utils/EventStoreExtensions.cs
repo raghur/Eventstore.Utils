@@ -14,11 +14,10 @@ namespace Eventstore.Utils
     }
     public static class EventStoreExtensions
     {
-        public static IEnumerable<Commit> RewriteCommits<T>(this IStoreEvents eventStore, Func<Commit, T, bool> updateFn, Action<EventMessage> dumper = null) where T : class
+        private static void NoOp<T>(T a) {}
+        public static IEnumerable<Commit> RewriteCommits<T>(this IStoreEvents eventStore, Func<Commit, T, bool> updateFn, bool dryRun = true) where T : class
         {
-            var dryRun = dumper != null;
             var modifiedCommits = new List<Commit>();
-            dumper = dumper ?? (e => { });
             var commitList = eventStore.Commits<T>();
             commitList.ToList().ForEach(c =>
                 {
@@ -27,7 +26,6 @@ namespace Eventstore.Utils
                         {
                             if (em.Body is T && updateFn(c, em.Body as T))
                             {
-                                dumper(em);
                                 modifiedCommits.Add(c);
                                 wasModified = true;
                             }
@@ -42,16 +40,14 @@ namespace Eventstore.Utils
             return modifiedCommits.OrderBy(c => c.CommitStamp);
         }
 
-        public static IEnumerable<Commit> RewriteCommits(this IStoreEvents eventStore, Func<Commit, object, bool> updateFn, Action<EventMessage> dumper = null) 
+        public static IEnumerable<Commit> RewriteCommits(this IStoreEvents eventStore, Func<Commit, object, bool> updateFn, bool dryRun = true) 
         {
             var commitList = eventStore.Commits();
-            return eventStore.RewriteCommits(commitList, updateFn,dumper);
+            return eventStore.RewriteCommits(commitList, updateFn,dryRun);
         }
 
-        public static IEnumerable<Commit> RewriteCommits(this IStoreEvents eventStore, IEnumerable<Commit> commitList, Func<Commit, object, bool> updateFn, Action<EventMessage> dumper = null)
+        public static IEnumerable<Commit> RewriteCommits(this IStoreEvents eventStore, IEnumerable<Commit> commitList, Func<Commit, object, bool> updateFn, bool dryRun = true)
         {
-            var dryRun = dumper != null;
-            dumper = dumper ?? (e => { });
             var modifiedCommits = new List<Commit>();
             commitList.ToList().ForEach(c =>
             {
@@ -60,7 +56,6 @@ namespace Eventstore.Utils
                 {
                     if (updateFn(c, em.Body))
                     {
-                        dumper(em);
                         modifiedCommits.Add(c);
                         wasModified = true;
                     }

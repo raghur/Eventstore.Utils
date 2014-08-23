@@ -52,10 +52,9 @@ namespace Eventstore.Utils
         }
 
         public static void Rewrite(this IEnumerable<Commit> commits, IStoreEvents eventStore,
-                                   Action<EventMessage> dumper = null)
+                                   bool dryRun = true)
         {
-            // CAREFUL - WILL ALWAYS OVERWRITE COMMITS.
-            eventStore.RewriteCommits(commits, (c,o) => true, dumper);
+            eventStore.RewriteCommits(commits, (c,o) => true, dryRun);
         }
     }
 }
