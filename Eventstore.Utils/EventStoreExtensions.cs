@@ -15,6 +15,14 @@ namespace Eventstore.Utils
     public static class EventStoreExtensions
     {
         private static void NoOp<T>(T a) {}
+
+        public static IEnumerable<Commit> RewriteCommits(this IStoreEvents eventStore, IEnumerable<Commit> commits, bool dryRun = true)
+        {
+            if (dryRun) return commits;
+            var rewriteCommits = commits as IList<Commit> ?? commits.ToList();
+            rewriteCommits.ToList().ForEach(c => eventStore.Advanced.Commit(c));
+            return rewriteCommits.OrderBy(c => c.CommitStamp);
+        }
         public static IEnumerable<Commit> RewriteCommits<T>(this IStoreEvents eventStore, Func<Commit, T, bool> updateFn, bool dryRun = true) where T : class
         {
             var modifiedCommits = new List<Commit>();
@@ -32,12 +40,10 @@ namespace Eventstore.Utils
                             return em;
                         }).ToList();
                     if (!wasModified) return;
-                    if (dryRun) return;
                     c.Events.Clear();
                     c.Events.AddRange(modifiedEvents);
-                    eventStore.Advanced.Commit(c);
                 });
-            return modifiedCommits.OrderBy(c => c.CommitStamp);
+            return  eventStore.RewriteCommits(modifiedCommits, dryRun);
         }
 
         public static IEnumerable<Commit> RewriteCommits(this IStoreEvents eventStore, Func<Commit, object, bool> updateFn, bool dryRun = true) 
@@ -62,15 +68,13 @@ namespace Eventstore.Utils
                     return em;
                 }).ToList();
                 if (!wasModified) return;
-                if (dryRun) return;
                 c.Events.Clear();
                 c.Events.AddRange(modifiedEvents);
-                eventStore.Advanced.Commit(c);
             });
-            return modifiedCommits.OrderBy(c => c.CommitStamp);
+            return eventStore.RewriteCommits(modifiedCommits, dryRun);
         }
 
-
+       
         public static IEnumerable<Pair<EventMessage, Exception>> ReplayEvents(this IEnumerable<object> handlers, IEnumerable<EventMessage> events, Action<EventMessage, Exception> dumper = null)
         {
             dumper = dumper ?? ((o, ex) => { });
