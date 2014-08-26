@@ -20,6 +20,10 @@ namespace Eventstore.Utils.EventPatcher
                                             Where
                                                 StreamId = @StreamId and
                                                 CommitSequence = @CommitSequence";
+
+        private const string DeleteStmt =
+            @"Delete Commits 
+                where CommitId = @CommitId";
         public SqlPersistenceEngine(IConnectionFactory connectionFactory, ISqlDialect dialect, ISerialize serializer, TransactionScopeOption scopeOption, int pageSize) : base(connectionFactory, dialect, serializer, scopeOption, pageSize)
         {
             this.dialect = dialect;
@@ -28,12 +32,29 @@ namespace Eventstore.Utils.EventPatcher
 
         public override void Commit(Commit attempt)
         {
-          PersistExistingCommit(attempt);
+            if (attempt.Events.Count == 0)
+            {
+                DeleteCommit(attempt);
+            }
+            else
+            {
+                UpdateCommit(attempt);      
+            }
+          
             
             
         }
 
-        private void PersistExistingCommit(Commit attempt)
+        private void DeleteCommit(Commit attempt)
+        {
+            this.ExecuteCommand<int>(attempt.StreamId, (Func<IDbStatement, int>)(cmd =>
+            {
+                cmd.AddParameter(this.dialect.CommitId, (object)attempt.CommitId);
+                return cmd.ExecuteNonQuery(DeleteStmt);
+            }));
+        }
+
+        private void UpdateCommit(Commit attempt)
         {
             this.ExecuteCommand<int>(attempt.StreamId, (Func<IDbStatement, int>)(cmd =>
                 {
