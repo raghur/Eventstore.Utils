@@ -7,15 +7,8 @@ using Lokad.Cqrs;
 
 namespace Eventstore.Utils
 {
-    public class Pair<TA,TB>
+   public static class EventStoreExtensions
     {
-        public TA Item1;
-        public TB Item2;
-    }
-    public static class EventStoreExtensions
-    {
-        private static void NoOp<T>(T a) {}
-
         public static IEnumerable<Commit> RewriteCommits(this IStoreEvents eventStore, IEnumerable<Commit> commits, bool dryRun = true)
         {
             if (dryRun) return commits;
@@ -75,11 +68,10 @@ namespace Eventstore.Utils
         }
 
        
-        public static IEnumerable<Pair<EventMessage, Exception>> ReplayEvents(this IEnumerable<object> handlers, IEnumerable<EventMessage> events, Action<EventMessage, Exception> dumper = null)
+        public static IEnumerable<KeyValuePair<EventMessage, Exception>> ReplayEvents(this IEnumerable<object> handlers, IEnumerable<EventMessage> events)
         {
-            dumper = dumper ?? ((o, ex) => { });
             var eventHandlerChain = new RedirectToDynamicEvent();
-            var exceptions = new List<Pair<EventMessage, Exception>>();
+            var exceptions = new List<KeyValuePair<EventMessage, Exception>>();
             handlers.ToList().ForEach(eventHandlerChain.WireToWhen);
             events.ToList().ForEach(ev =>
                 {
@@ -91,18 +83,16 @@ namespace Eventstore.Utils
                         }
                         catch (Exception ex)
                         {
-                            dumper(ev, ex);
-                            exceptions.Add(new Pair<EventMessage, Exception>(){Item1 = ev, Item2 = ex});
+                            exceptions.Add(new KeyValuePair<EventMessage, Exception>(ev, ex));
                         }
                     }
                 });
             return exceptions;
         }
 
-        public static IEnumerable<Pair<object, Exception>> ReplayEvents(this IEnumerable<object> handlers, IEnumerable<object> events, Action<object, Exception> dumper = null)
+        public static IEnumerable<KeyValuePair<object, Exception>> ReplayEvents(this IEnumerable<object> handlers, IEnumerable<object> events)
         {
-            dumper = dumper ?? ((o, ex) => { });
-            var exceptions = new List<Pair<object, Exception>>();
+            var exceptions = new List<KeyValuePair<object, Exception>>();
             var eventHandlerChain = new RedirectToDynamicEvent();
             handlers.ToList().ForEach(eventHandlerChain.WireToWhen);
             events.ToList().ForEach(ev =>
@@ -115,8 +105,7 @@ namespace Eventstore.Utils
                     }
                     catch (Exception ex)
                     {
-                        dumper(ev, ex);
-                        exceptions.Add(new Pair<object, Exception>() { Item1 = ev, Item2 = ex });
+                        exceptions.Add(new KeyValuePair<object, Exception>(ev, ex));
                     }
                 }
             });
