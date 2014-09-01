@@ -62,7 +62,7 @@ namespace Eventstore.Utils
             return es.Advanced
                      .GetFrom(@from ?? DateTime.MinValue)
                      .Where(commitFilter)
-                     .OrderBy(c => c.CommitSequence)
+                     .OrderBy(c => c.CommitStamp)
                      .SelectMany(c => c.Events.Where(eventFilter))
                      .ToList();
         }
