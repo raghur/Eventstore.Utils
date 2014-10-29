@@ -16,14 +16,10 @@ namespace Eventstore.Utils
         }
 
         // Get commits that have events of specific type - aggregate filter
-        public static IEnumerable<Commit> Commits<T>(this IStoreEvents es, Guid aggId, Func<T, bool> cond = null, DateTime? @from = null)
+        public static IEnumerable<Commit> Commits(this IStoreEvents es, Guid aggId, Func<Commit, bool> cond = null, DateTime? @from = null)
         {
             cond = cond ?? (t => true);
-            return es.Commits(c => c.StreamId == aggId &&
-                                   Enumerable.Any<EventMessage>(c.Events,
-                                                                e => e.Body.GetType() == typeof (T) && cond((T) e.Body)),
-                              @from);
-
+            return es.Commits(c => c.StreamId == aggId && cond(c), @from);
         }
 
         // get commits having events of one or more types
