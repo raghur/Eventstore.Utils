@@ -17,14 +17,24 @@ namespace Eventstore.Utils
 
         public static IEnumerable<object> Events(this IStoreEvents es, DateTime? @from = null, params Type[] types)
         {
-            return es.EventMessages(@from, types)
-                     .Select(em => em.Body);
+            if (types.Length > 0)
+            {
+                return es.EventMessages(@from, types)
+                         .Select(em => em.Body);
+            }
+            return es.EventMessages(@from).Select(em => em.Body);
         }
 
         public static IEnumerable<object> Events(this IStoreEvents es, Guid aggregateId, DateTime? @from = null, params Type[] types)
         {
-            return es.EventMessages(aggregateId, @from, types)
-                     .Select(em => em.Body);
+            if (types.Length > 0)
+            {
+                return es.EventMessages(aggregateId, @from, types)
+                         .Select(em => em.Body);
+            }
+            return es.EventMessages(aggregateId, @from)
+                      .Select(em => em.Body);
+        }
         }
     }
 }
