@@ -28,12 +28,17 @@ namespace Eventstore.Utils
             return es.Commits(c => c.Events.Any(e => eventTypes.Contains(e.Body.GetType())));
         }
 
-        // get commits for aggregate
-        public static IEnumerable<Commit> Commits(this IStoreEvents es, Guid aggId)
+        // Delete commits
+        public static void Delete(this IStoreEvents es, IEnumerable<Commit> commits)
         {
-            return es.Commits(c => c.StreamId == aggId);
+            commits.ToList().ForEach(c =>
+                {
+                    var evCopy = c.Events.ToList();
+                    c.Events.Clear();
+                    es.Advanced.Commit(c);
+                    c.Events.AddRange(evCopy);
+                });
         }
-
 
         public static IEnumerable<Commit> Commits(this IStoreEvents es,
                                                   Func<Commit, bool> commitFilter = null,
