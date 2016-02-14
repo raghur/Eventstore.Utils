@@ -13,4 +13,8 @@
     <copyright>Copyright 2016</copyright>
     <tags>Eventstore CommonDomain</tags>
   </metadata>
+  <files>
+    <file src="..\libs\*.dll" target="lib\net45" />
+    <file src="bin\$configuration$\$id$.pdb" target="lib\net45\" />
+  </files>
 </package>
